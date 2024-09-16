@@ -9,6 +9,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function HomeScreen() {
