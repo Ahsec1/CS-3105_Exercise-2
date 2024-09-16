@@ -165,13 +165,13 @@ export default function HomeScreen() {
       
       <View style={styles.cardWrapper}>
         <Animated.View style={[styles.card, frontAnimatedStyle]}>
-          <Pressable onPress={flipCard}>
+          <Pressable style={styles.contentBox} onPress={flipCard}>
             <Text style={styles.content}>{shuffledCards[index]?.front}</Text>
           </Pressable>
         </Animated.View>
 
         <Animated.View style={[styles.card, backAnimatedStyle]}>
-          <Pressable onPress={flipCard}>
+          <Pressable style={styles.contentBox} onPress={flipCard}>
             <Text style={styles.content}>{shuffledCards[index]?.back}</Text>
           </Pressable>
         </Animated.View>
@@ -313,4 +313,10 @@ const styles = StyleSheet.create({
     color: "#000",
     textAlign: "center",
   },
+  contentBox: {
+    width: screenWidth * 0.8, 
+    height: screenHeight * 0.4, 
+    textAlign: "center",
+    justifyContent: "center",
+  }
 });
