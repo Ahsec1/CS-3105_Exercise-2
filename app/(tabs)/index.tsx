@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, Pressable, Image } from "react-native";
+import { Dimensions } from "react-native";
+import ProgressBarComponent from '../ProgressBar';
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -7,23 +9,37 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
 export default function HomeScreen() {
   const [index, setIndex] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [autoplayCounter, setAutoplayCounter] = useState(0);
   const rotate = useSharedValue(0);
   const isAnimating = useSharedValue(true);
+  const [shuffledCards, setShuffledCards] = useState<{ id: number; front: string; back: string }[]>([]);
 
   const [FlashCards, setFlashCards] = useState([
-    { front: "Who created this program?", back: "John and Ditto" },
-    { front: "What courses did the creators of this take?", back: "Computer Science" },
-    { front: "How long did this take to make?", back: "Around 2-3 Hours", },
-    { front: "What class is this for?", back: "App Development" },
+    { id: 1, front: "Who created this program?", back: "John and Ditto" },
+    { id: 2, front: "What courses did the creators of this take?", back: "Computer Science" },
+    { id: 3, front: "How long did this take to make?", back: "Around 2-3 Hours" },
+    { id: 4, front: "What class is this for?", back: "App Development" },
+    { id: 5, front: "What is the name of our country", back: "Philippines" },
   ]);
 
-  // ANIMATIONS
   const frontAnimatedStyle = useAnimatedStyle(() => {
     const spinVal = interpolate(rotate.value, [0, 1], [0, 180]);
+    return {
+      transform: [
+        {
+          rotateX: isAnimating.value
+            ? withTiming(`${spinVal}deg`, { duration: 500 })
+            : `${spinVal}deg`,
+        },
+      ],
+      position: "absolute",
+      backfaceVisibility: "hidden",
+    };
     return {
       transform: [
         {
@@ -49,33 +65,53 @@ export default function HomeScreen() {
       ],
       backfaceVisibility: "hidden",
     };
+    return {
+      transform: [
+        {
+          rotateX: isAnimating.value
+            ? withTiming(`${spinVal}deg`, { duration: 500 })
+            : `${spinVal}deg`,
+        },
+      ],
+      backfaceVisibility: "hidden",
+    };
   }, []);
 
-  // NAVIGATION FUNCTIONS
-  const nextCard = () => {
-    isAnimating.value = false;
-    rotate.value = 0;
-    setIndex((prevIndex) => (prevIndex + 1) % FlashCards.length);
-  };
 
-  const prevCard = () => {
-    isAnimating.value = false;
-    rotate.value = 0;
-    setIndex(
-      (prevIndex) => (prevIndex - 1 + FlashCards.length) % FlashCards.length
-    );
-  };
-
-  const flipCard = () => {
-    isAnimating.value = true;
-    rotate.value = rotate.value ? 0 : 1;
-  };
+  useEffect(() => {
+    setShuffledCards([...FlashCards]);
+  }, [FlashCards]);
 
   const shuffleCards = () => {
     setFlashCards((prevFlashCards) =>
       [...prevFlashCards].sort(() => Math.random() - 0.5)
     );
     setIndex(0);
+  };
+
+  const nextCard = () => {
+    if (shuffledCards.length > 0) {
+      isAnimating.value = false;
+      rotate.value = 0;
+      setIndex((prevIndex) => (prevIndex + 1) % shuffledCards.length);
+    }
+  };
+
+  const prevCard = () => {
+    if (shuffledCards.length > 0) {
+      isAnimating.value = false;
+      rotate.value = 0;
+      setIndex(
+        (prevIndex) => (prevIndex - 1 + shuffledCards.length) % shuffledCards.length
+      );
+    }
+  };
+
+  const flipCard = () => {
+    isAnimating.value = true;
+    rotate.value = rotate.value ? 0 : 1;
+    isAnimating.value = true;
+    rotate.value = rotate.value ? 0 : 1;
   };
 
   const toggleAutoplay = () => {
@@ -85,7 +121,6 @@ export default function HomeScreen() {
     }
   };
 
-  // AUTOPLAY FUNCTIONS
   useEffect(() => {
     let flipTimeout: NodeJS.Timeout | undefined;
     let nextCardTimeout: NodeJS.Timeout | undefined;
@@ -113,7 +148,6 @@ export default function HomeScreen() {
     };
   }, [isAutoplay]);
 
-  // AUTOPLAY COUNTER
   useEffect(() => {
     let counterInterval: NodeJS.Timeout | undefined;
 
@@ -130,8 +164,8 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* CARD AND NAVIGATION */}
-      <View style={styles.cardContainer}>
+
+      <View style={styles.topRow}>
         <Pressable style={styles.shuffleButton} onPress={shuffleCards}>
           <Image
             source={require("../../assets/images/shuffleIcon.png")}
@@ -139,52 +173,59 @@ export default function HomeScreen() {
           />
         </Pressable>
 
-        <View style={styles.autoplayCounterContainer}>
+        <Text style={styles.cardCounter}>
+          {shuffledCards[index]?.id} / {shuffledCards.length}
+        </Text>
+
+        <View>
           {isAutoplay && (
             <Text style={styles.counterText}>{autoplayCounter}s</Text>
           )}
         </View>
-
-        <View style={styles.cardWrapper}>
-          <Animated.View style={[styles.card, frontAnimatedStyle]}>
-            <Pressable onPress={flipCard}>
-              <Text style={styles.content}>{FlashCards[index].front}</Text>
-            </Pressable>
-          </Animated.View>
-
-          <Animated.View style={[styles.card, backAnimatedStyle]}>
-            <Pressable onPress={flipCard}>
-              <Text style={styles.content}>{FlashCards[index].back}</Text>
-            </Pressable>
-          </Animated.View>
-        </View>
-
-        <View style={styles.navigate}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.navigateButton,
-              { backgroundColor: pressed ? "#0056b3" : "#007BFF" },
-            ]}
-            onPress={prevCard}
-          >
-            <Text style={styles.navigateButtonText}>Back</Text>
+      </View>
+      
+      <View style={styles.cardWrapper}>
+        <Animated.View style={[styles.card, frontAnimatedStyle]}>
+          <Pressable onPress={flipCard}>
+            <Text style={styles.content}>{shuffledCards[index]?.front}</Text>
           </Pressable>
+        </Animated.View>
 
-          <Text style={styles.content}>{index + 1}</Text>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.navigateButton,
-              { backgroundColor: pressed ? "#0056b3" : "#007BFF" },
-            ]}
-            onPress={nextCard}
-          >
-            <Text style={styles.navigateButtonText}>Next</Text>
+        <Animated.View style={[styles.card, backAnimatedStyle]}>
+          <Pressable onPress={flipCard}>
+            <Text style={styles.content}>{shuffledCards[index]?.back}</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       </View>
 
-      {/* AUTOPLAY BUTTON */}
+      <ProgressBarComponent
+        totalCards={shuffledCards.length}
+        currentCardId={shuffledCards[index]?.id || 1}
+        shuffledCards={shuffledCards}
+      />
+
+      <View style={styles.navigate}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.navigateButton,
+            { backgroundColor: pressed ? "#0056b3" : "#007BFF" },
+          ]}
+          onPress={prevCard}
+        >
+          <Text style={styles.navigateButtonText}>Back</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.navigateButton,
+            { backgroundColor: pressed ? "#0056b3" : "#007BFF" },
+          ]}
+          onPress={nextCard}
+        >
+          <Text style={styles.navigateButtonText}>Next</Text>
+        </Pressable>
+      </View>
+
       <Pressable
         style={[
           styles.autoplayButton,
@@ -213,82 +254,84 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     alignItems: "center",
-    width: 750,
-    height: 300,
+    width: screenWidth * 0.9, 
+    height: screenHeight * 0.4, 
   },
   card: {
-    width: 750,
-    height: 300,
-    padding: 40,
+    width: "100%",
+    height: "100%",
+    padding: screenWidth * 0.05, 
     borderRadius: 20,
     backgroundColor: "lightgrey",
     justifyContent: "center",
     position: "absolute",
   },
   navigate: {
-    width: 750,
+    width: screenWidth * 0.9, 
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 40,
+    marginTop: 20,
   },
   navigateButton: {
     backgroundColor: "#007BFF",
-    padding: 20,
+    padding: 10,
     borderRadius: 10,
-    width: 250,
+    width: screenWidth * 0.4, 
     alignItems: "center",
     justifyContent: "center",
   },
   navigateButtonText: {
     color: "#fff",
-    fontSize: 32,
+    fontSize: 18,
   },
   autoplayButton: {
-    marginTop: 40,
-    width: 750,
-    padding: 20,
+    marginTop: 20,
+    width: screenWidth * 0.9, 
+    padding: 10,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
   },
   autoplayButtonText: {
     color: "#fff",
-    fontSize: 32,
+    fontSize: 20,
     textAlign: "center",
   },
   shuffleButton: {
-    position: "absolute",
-    top: -80,
-    left: -20,
-    width: 750,
-    alignItems: "flex-start",
-    paddingLeft: 20,
-    zIndex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   shuffleIcon: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
   },
-  autoplayCounterContainer: {
-    position: "absolute",
-    top: -80,
-    right: -10,
-    width: 750,
-    alignItems: "flex-end",
-    paddingRight: 20,
-  },
+  
   counterText: {
     color: "#fff",
-    fontSize: 32,
+    fontSize: 20,
     backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 10,
+    padding: 5,
     borderRadius: 10,
     textAlign: "center",
   },
   content: {
     textAlign: "center",
-    padding: 40,
-    fontSize: 32,
+    padding: screenWidth * 0.05, 
+    fontSize: 18,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: screenWidth * 0.9, 
+    marginBottom: 20, 
+  },
+  cardCounter: {
+    position: "absolute",
+    right: 150,
+    fontSize: 18,
+    color: "#000",
+    textAlign: "center",
   },
 });
