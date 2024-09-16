@@ -40,31 +40,10 @@ export default function HomeScreen() {
       position: "absolute",
       backfaceVisibility: "hidden",
     };
-    return {
-      transform: [
-        {
-          rotateX: isAnimating.value
-            ? withTiming(`${spinVal}deg`, { duration: 500 })
-            : `${spinVal}deg`,
-        },
-      ],
-      position: "absolute",
-      backfaceVisibility: "hidden",
-    };
   }, []);
 
   const backAnimatedStyle = useAnimatedStyle(() => {
     const spinVal = interpolate(rotate.value, [0, 1], [180, 360]);
-    return {
-      transform: [
-        {
-          rotateX: isAnimating.value
-            ? withTiming(`${spinVal}deg`, { duration: 500 })
-            : `${spinVal}deg`,
-        },
-      ],
-      backfaceVisibility: "hidden",
-    };
     return {
       transform: [
         {
